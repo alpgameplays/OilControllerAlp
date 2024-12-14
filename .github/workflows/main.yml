@@ -1,0 +1,125 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - master
+      - main
+    types: [opened, synchronize]
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true && (github.event.pull_request.base.ref == 'master' || github.event.pull_request.base.ref == 'main') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Read current version from library.properties
+        id: read_version
+        run: |
+          version=$(grep -Po '(?<=^version=).*$' library.properties)
+          echo "current_version=$version" >> $GITHUB_ENV
+
+      - name: Check if version exists or is duplicate
+        id: check_version
+        run: |
+          version=${{ env.current_version }}
+          if [ -z "$version" ]; then
+            echo "Version not found. Please add a version to library.properties."
+            exit 1
+          fi
+          if git tag --list | grep -q "v$version"; then
+            echo "Version $version already exists. Please update the version in library.properties."
+            exit 1
+          fi
+
+      - name: Create release ZIPs
+        if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true }}
+        run: |
+          mkdir -p release/OilControllerAlp
+
+          cp -r src/* release/OilControllerAlp/
+          cp library.properties release/OilControllerAlp/
+
+          cd release
+          zip -r OilControllerAlp.zip OilControllerAlp
+
+      - name: Create GitHub Release
+        if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true }}
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.current_version }}
+          release_name: Release ${{ env.current_version }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset - OilControllerAlp
+        if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true }}
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: release/OilControllerAlp.zip
+          asset_name: OilControllerAlp.zip
+          asset_content_type: application/zip
+
+  check-version:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Read current version from library.properties
+        id: read_version
+        run: |
+          version=$(grep -Po '(?<=^version=).*$' library.properties)
+          echo "current_version=$version" >> $GITHUB_ENV
+
+      - name: Check if version exists or is duplicate
+        uses: actions/github-script@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+        with:
+          script: |            
+            let versionExists = false;
+            await exec.exec('git', ['tag', '--list'], {
+              listeners: {
+                stdout: (data) => {
+                  if (data.toString().includes('v${{ env.current_version }}')) {
+                    versionExists = true;
+                  }
+                }
+              }
+            });
+            if ('${{ env.current_version }}' === '') {
+              await github.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: 'Please add a version to library.properties.'
+              });
+            } else if (versionExists) {
+              await github.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: 'Version ${{ env.current_version }} already exists. Please update the version in library.properties.'
+              });
+            }
