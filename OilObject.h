@@ -24,7 +24,7 @@ public:
      * @param maxPWM The maximum PWM value.
      * @param currentStateOil The initial oil state.
      */
-    OilObject(int pin, int minPWM, int maxPWM, int currentStateOil, float oilCapacity, String jsonKey)
+    OilObject(int pin, int minPWM, int maxPWM, int currentStateOil, float oilCapacity, char* jsonKey)
         : _pin(pin), _minPWM(minPWM), _maxPWM(maxPWM), _currentStateOil(currentStateOil), _defaultInitalValue(currentStateOil), _oilCapacity(oilCapacity), _jsonKey(jsonKey) {}
 
     int getPin() const { return _pin; }
@@ -32,7 +32,7 @@ public:
     int getMaxPWM() const { return _maxPWM; }
     int getCurrentStateOil() const { return _currentStateOil; }
     int getOilCapacity() const { return _oilCapacity; }
-    int getJsonKey() const { return _jsonKey; }
+    char* getJsonKey() const { return _jsonKey; }
     int getDefaultInitialValue() const { return _defaultInitalValue; }
     void setCurrentStateOil(int value) { _currentStateOil = value; }
 
@@ -42,8 +42,8 @@ private:
     int _maxPWM;
     int _currentStateOil;
     int _defaultInitalValue;
-    float _oilCapacity
-    String _jsonKey
+    float _oilCapacity;
+    char* _jsonKey;
 };
 
 #endif

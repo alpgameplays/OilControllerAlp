@@ -2,8 +2,8 @@
  * @file OilControllerAlp.h
  * @brief Declaration of the OilControllerAlp class for managing oil behavior.
  */
-#ifndef FUEL_CONTROLLER_H
-#define FUEL_CONTROLLER_H
+#ifndef OIL_CONTROLLER_H
+#define OIL_CONTROLLER_H
 
 #include <Arduino.h>
 #include "OilObject.h"
@@ -35,7 +35,7 @@ public:
      * @brief Directly updates the oil state without additional validation.
      * @param json The input JSON string with oil-related data.
      */
-    void updateFuelState(const String &json); // Nome atualizado
+    void updateOilState(const String &json); // Nome atualizado
 
     void resetPinState();
 

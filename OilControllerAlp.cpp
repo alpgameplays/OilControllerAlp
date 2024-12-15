@@ -3,10 +3,10 @@
 #include "OilObject.h"
 #include "OilControllerAlp.h"
 
-OilControllerAlp::OilControllerAlp(OilObject oilTemp, JsonDeserializeAlp jsonDeserialize) : _oilValue(oilTemp), _jsonDeserialize(jsonDeserialize)
+OilControllerAlp::OilControllerAlp(OilObject oilValue, JsonDeserializeAlp jsonDeserialize) : _oilValue(oilValue), _jsonDeserialize(jsonDeserialize)
 {
     pinMode(_oilValue.getPin(), OUTPUT);
-    analogWrite(_oilValue.getPin(), _oilValue.getCurrentStateFuel());
+    analogWrite(_oilValue.getPin(), _oilValue.getCurrentStateOil());
 }
 
 void OilControllerAlp::update(const String &json)
@@ -15,7 +15,7 @@ void OilControllerAlp::update(const String &json)
 
     if (shouldSendSignalToPin)
     {
-        updateFuelState(json);
+        updateOilState(json);
     }
     else
     {
@@ -26,7 +26,7 @@ void OilControllerAlp::update(const String &json)
 void OilControllerAlp::resetPinState()
 {
     analogWrite(_oilValue.getPin(), _oilValue.getDefaultInitialValue());
-    _oilValue.setCurrentStateFuel(_oilValue.getDefaultInitialValue());
+    _oilValue.setCurrentStateOil(_oilValue.getDefaultInitialValue());
 }
 
 bool OilControllerAlp::canSendSignalToPin(const String &json)
@@ -37,7 +37,7 @@ bool OilControllerAlp::canSendSignalToPin(const String &json)
     return electricOn || engineOn;
 }
 
-void OilControllerAlp::updateFuelState(const String &json)
+void OilControllerAlp::updateOilState(const String &json)
 {
     float currentOil = _jsonDeserialize.getFloatValue(json, _oilValue.getJsonKey());
     
@@ -47,10 +47,10 @@ void OilControllerAlp::updateFuelState(const String &json)
         float percentValue = (currentOil / _oilValue.getOilCapacity()) * 100.0;
         int pwm = map(percentValue, 100, 0, _oilValue.getMinPWM(), _oilValue.getMaxPWM());
 
-        if (_oilValue.getCurrentStateFuel() != pwm)
+        if (_oilValue.getCurrentStateOil() != pwm)
         {
             analogWrite(_oilValue.getPin(), pwm);
-            _oilValue.setCurrentStateFuel(pwm);
+            _oilValue.setCurrentStateOil(pwm);
         }
     }
     else
