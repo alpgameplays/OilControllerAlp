@@ -44,8 +44,7 @@ void OilControllerAlp::updateOilState(const String &json)
 
     if (currentOil > 0)
     {
-        float percentValue = (currentOil / _oilValue.getOilCapacity()) * 100.0;
-        int pwm = map(percentValue, 100, 0, _oilValue.getMinPWM(), _oilValue.getMaxPWM());
+        int pwm = map(currentOil, _oilValue.getOilCapacity(), _oilValue.getOilMinCapacity(), _oilValue.getMinPWM(), _oilValue.getMaxPWM());
 
         if (_oilValue.getCurrentStateOil() != pwm)
         {
@@ -53,8 +52,5 @@ void OilControllerAlp::updateOilState(const String &json)
             _oilValue.setCurrentStateOil(pwm);
         }
     }
-    else
-    {
-        resetPinState();
-    }
+   
 }
